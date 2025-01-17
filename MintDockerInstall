@@ -1,39 +1,41 @@
 #!/bin/bash
-#Remove any programs associated with docker that may have been previously installed
-sudo apt-get remove docker docker-engine docker.io containerd runc -y
 
+# Remove any programs associated with Docker that may have been previously installed
+sudo apt-get remove -y docker docker-engine docker.io containerd runc
+
+# Update system package list
 sudo apt-get update -y
 
-#Install necessary dependencies
-sudo apt-get install \
+# Install necessary dependencies
+sudo apt-get install -y \
     apt-transport-https \
     ca-certificates \
     curl \
     gnupg-agent \
-    software-properties-common -y
+    software-properties-common
 
-#Get the necessary key
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+# Get the necessary key for Docker repository
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-#Add the correct repo to get Docker for Linux Mint
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(. /etc/os-release; echo "$UBUNTU_CODENAME") stable"
+# Add the correct Docker repository for Linux Mint (based on Ubuntu base)
+sudo add-apt-repository \
+   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+   https://download.docker.com/linux/ubuntu $(. /etc/os-release; echo "$UBUNTU_CODENAME") stable"
 
+# Update package list again after adding the Docker repo
 sudo apt update -y
 
-#Install Docker
-sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+# Install Docker components
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
-#Add the last user logged in to the Docker Group
-sudo usermod -aG docker $(last|cut -d " " -f 1|sed -n 1p) 
+# Add the current user to the Docker group for non-root usage
+sudo usermod -aG docker $USER
 
-
-#Docker Compose
-#pass the keyword "all" when executing this script to install docker compose as well
-if [[ $1 == "all" ]]
-then
+# Docker Compose installation if "all" argument is passed
+if [[ $1 == "all" ]]; then
     sudo curl -L "https://github.com/docker/compose/releases/download/v2.6.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
-#Switch user to the current user for group permissions to take effect
-su - $USER
+# Refresh user group permissions
+echo "Docker installation complete. Please log out and back in for group permissions to take effect."
